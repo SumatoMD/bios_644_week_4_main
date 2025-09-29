@@ -1,0 +1,653 @@
+---
+title: "Week 4 Assessment"
+author: "Dr. Harrison G. Saulnier"
+date: "2025-09-25"
+output:
+  html_document:
+    theme: journal
+    highlight: haddock
+    toc: TRUE
+    toc_float: TRUE
+    toc_depth: 2
+    code_folding: hide
+ 
+---
+```{r setup, include = FALSE}
+```
+
+### Packages and Data Sets
+```{r, eval = TRUE, echo= TRUE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE,
+                      fig.align = 'center',  # Formatting for all Figures
+                      out.width = "90%")
+
+### Package Loading ###
+library(pacman)
+p_load(here)
+p_load(readr)
+p_load(rio)
+p_load(skimr)
+p_load(janitor)
+p_load(tidyverse)
+p_load(dplyr)
+p_load(rmarkdown)
+p_load(tinytex)
+p_load(ggplot2)
+p_load(cowplot)
+p_load(ggpubr)
+p_load(RColorBrewer)
+p_load(forcats)
+p_load(dtplyr)
+p_load(DT)
+
+### Data Set Import ###
+
+## NHANES Data - Cleaned by Instructor ##
+nhanes_clean <- import(here("week_3_files", "data", "cleaned_NHANES.csv"))
+
+## Dietary Data ##
+diet_raw <- import(here("week_3_files", "data", "diet.csv"))
+
+# Isolate data that contains only adults
+nhanes_adults <- nhanes_clean %>% 
+  filter(age >= 20 & age <= 80)
+```
+
+# Exercise #1 - Reproducing and arranging ggplot2 figures
+
+Presented are the re-worked plots for the assessment, with their associated code. 
+
+## Demographics of NHANES Participants from 2013 to 2018 {.tabset}
+
+### Distribution of Ages, Ethnicities and Gender
+
+```{r, eval = TRUE}
+# Distribution of Adult Participants Ages
+
+ggplot(nhanes_adults, aes(x = age, fill = fct_rev(gender))) + # Matches gender orientation of Exercise 1
+  geom_histogram(binwidth = 5, position = "dodge") + # Groups Male/Female side by side
+  labs( # Re-labels axes
+    title = expression(underline("Age Distribution of Adult NHANES Participants from 2013-2018")),
+    x = "Age (years)",
+    y = "Participants (#)",
+    fill = "Gender") + 
+  theme(plot.title = element_text(hjust = 0.5)) # Centers the chart title
+
+
+ggsave( #Saving the generated plot
+      "nhanes_age_dist.png",
+      path = here("week_3_files", "figure images"),
+      width = 8, height = 6)
+
+
+### Distribution of Participant Reported Ethnicity #
+
+ggplot(nhanes_adults, aes(x = ethnicity_2, fill = fct_rev(gender))) + # Matches gender orientation of Exercise 1
+  geom_bar(position = "fill") + #Provides the relative ratio scale
+  labs( # Re-label axes
+    title = "Relative Gender Distribution of Ethnicities in Adult NHANES Participants", 
+    x = "Reported Ethnicity",
+    y = "Relative Distribution",
+    fill = "Gender") +
+  theme(plot.title = element_text(hjust = 0.5)) # Centers the chart title
+
+ggsave( # Saving the generated plot
+  "nhanes_ethn2_dist.png",
+  path = here("week_3_files", "figure images"),
+  width = 8, height = 6)
+
+### Distribution of Ethnicity-1 as a function of Age #
+
+ggplot(nhanes_clean, aes(x = ethnicity_1, y = age, fill = gender)) + # Matches gender orientation of Exercise 1
+  geom_boxplot() + #Provides the relative ratio scale
+  labs( # Re-label axes
+    title = "Distribution of Participant Age as a Function of Ethnicity (-Asian)", 
+    x = "Reported Ethnicity",
+    y = "Age (years)",
+    fill = "Gender") +
+theme(plot.title = element_text(hjust = 0.5)) #Centers the chart title
+
+
+### Distribution of Ethnicity-1 as a function of Age #
+
+ggplot(nhanes_clean, aes(x = ethnicity_2, y = age, fill = gender)) + #Matches gender orientation of Exercise 1
+  geom_boxplot() + #Provides the relative ratio scale
+  labs( #Re-label axes
+    title = "Distribution of Participant Age as a Function of Ethnicity (+Asian)", 
+    x = "Reported Ethnicity",
+    y = "Age (years)",
+    fill = "Gender") +
+  theme(plot.title = element_text(hjust = 0.5)) #Centers the chart title
+```
+
+
+
+```{r, eval = TRUE}
+#Turn our plots into objects to be referenced in code
+nhanes_p_1 <- ggplot(nhanes_adults, aes(x = age, fill = fct_rev(gender))) + # Matches gender orientation of Exercise 1
+  geom_histogram(binwidth = 5, position = "dodge") + # Groups Male/Female side by side
+  labs( #Re-labels axes
+    title = "Age Distribution of Adult NHANES Participants from 2013-2018",
+    x = "Age (years)",
+    y = "Participants (#)",
+    fill = "Gender") + 
+  theme(plot.title = element_text(hjust = 0.5)) # Centers the chart title
+
+nhanes_p_2 <-ggplot(nhanes_adults, aes(x = ethnicity_2, fill = fct_rev(gender))) + # Matches gender orientation of Exercise 1
+  geom_bar(position = "fill") + # Provides the relative ratio scale
+  labs( # Re-label axes
+    title = "Relative Gender Distribution of Ethnicities in Adult NHANES Participants", 
+    x = "Reported Ethnicity",
+    y = "Relative Distribution",
+    fill = "Gender") +
+  theme(plot.title = element_text(hjust = 0.5)) # Centers the chart title
+
+```
+
+
+```{r, eval=FALSE}
+knitr::opts_chunk$set(echo = FALSE, # I wanted the code to be shown in the report; didn't pan out.
+                      include = FALSE,
+                      message = FALSE,
+                      warning = FALSE)
+
+# Plot 1 - Distribution of Adult Participants Ages #
+
+ggplot(nhanes_adults, aes(x = age, fill = fct_rev(gender))) + # Matches gender orientation of Exercise 1
+  geom_histogram(binwidth = 5, position = "dodge") + # Groups Male/Female side by side
+  labs( #Re-labels axes
+    title = expression(underline("Age Distribution of Adult NHANES Participants from 2013-2018")),
+    x = "Age (years)",
+    y = "Participants (#)",
+    fill = "Gender") + 
+    theme(plot.title = element_text(hjust = 0.5)) # Centers the chart title
+
+```
+
+```{r, eval = FALSE, echo = FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      message = FALSE,
+                      warning = FALSE)
+# Combine and Organize Plots 1 and 2
+
+plot_grid( 
+  nhanes_p_1, nhanes_p_2,
+  rel_heights = c(2,1), nrow = 1, ncol = 2 # arranges the plots side by side
+)
+
+ggarrange(
+  nhanes_p_1, nhanes_p_2, nrow = 1, ncol = 2, # Specifies the arrangement
+  common.legend = TRUE, legend = "top" # consolidates, and relocates the legend
+)
+```
+ 
+### Appraisal of Participant Age Distribution
+
+```{r, eval = TRUE}
+ggarrange(
+  nhanes_p_1, nhanes_p_2, nrow = 2, ncol = 1, # Specifies the arrangement
+  common.legend = TRUE, legend = "top" # consolidates, and relocates the legend
+)
+
+ggsave( #Saving the generated plot
+  "nhanes_combo_age_and_rel_ethn.png",
+  path = here("week_3_files", "figure images"),
+  width = 8, height = 6)
+
+## Combining Plots 3 and 4 ##
+
+#Turn our plots into objects to be referenced in code
+nhanes_p_3 <- ggplot(nhanes_clean, aes(x = ethnicity_1, y = age, fill = gender)) + 
+  geom_boxplot() + # Same operations as previous section
+  labs( 
+    title = "Distribution of Participant Age as a Function of Ethnicity (-Asian)", 
+    x = "Reported Ethnicity",
+    y = "Age (years)",
+    fill = "Gender") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggsave( # Saving the generated plot
+  "nhanes_ethnicity_no_asian.png",
+  path = here("week_3_files", "figure images"),
+  width = 8, height = 6
+)
+
+nhanes_p_4 <- ggplot(nhanes_clean, aes(x = ethnicity_2, y = age, fill = gender)) + 
+  geom_boxplot() + 
+  labs( 
+    title = "Distribution of Participant Age as a Function of Ethnicity (+Asian)", 
+    x = "Reported Ethnicity",
+    y = "Age (years)",
+    fill = "Gender") +
+  theme(plot.title = element_text(hjust = 0.5)) 
+
+ggsave(# Saving the generated plot
+  "nhanes_ethnicity_yes_asian.png",
+  path = here("week_3_files", "figure images"),
+  width = 8, height = 6
+)
+
+# Combine and Organize Plots 1 and 2
+```
+
+
+```{r, eval = TRUE}
+ggarrange(
+  nhanes_p_3, nhanes_p_4, nrow = 2, ncol = 1, # Specifies the arrangement
+  common.legend = TRUE, legend = "top" # consolidates, and relocates the legend
+)
+
+ggsave(#Saving the generated plot    # saves the graph for future use
+  "nhanes_ethnicity_comparison.png",
+  path = here("week_3_files", "figure images"),
+  width = 8, height = 6
+)
+```
+
+The initial combination noted in the snippet of code, has the issue of a common legend occupying space, and making the combination look rather messy. Using ggarrange(), I was able to consolidate the legends, however the side-by-side arrangement smooshed the titles together. Thus, I opted to re-arrange the plots, to be on top of each other, with a consolidated legend, for a cleaner finish (presented above).
+
+```{r, eval=FALSE}
+knitr::opts_chunk$set(echo = TRUE, # I wanted this part to show up in the report as well
+                      message = FALSE,
+                      warning = FALSE)
+plot_grid( 
+  nhanes_p_1, nhanes_p_2,
+  rel_heights = c(2,1), nrow = 1, ncol = 2 #arranges the plots side by side
+)
+
+ggarrange(
+  nhanes_p_1, nhanes_p_2, nrow = 1, ncol = 2, #Specifies the arrangement
+  common.legend = TRUE, legend = "top" #consolidates, and relocates the legend
+)
+
+ggarrange(
+  nhanes_p_1, nhanes_p_2, nrow = 2, ncol = 1, #Specifies the arrangement
+  common.legend = TRUE, legend = "top" #consolidates, and relocates the legend
+)
+
+ggsave( #Saving the generated plot
+  "nhanes_combo_age_and_rel_ethn.png",
+  path = here("week_3_files", "figure images"),
+  width = 8, height = 6)
+```
+
+# Exercise #2 - Visualizing key characteristics
+
+## NHANES Participant Demographics and Blood Pressure Data (2013-2018)
+
+```{r table, echo = TRUE}
+datatable(
+  nhanes_adults, 
+  options = list(scrollx = TRUE)
+  )
+
+```
+
+
+```{r}
+knitr::include_graphics(here("week_3_files", "figure images", "nhanes_ethnicity_comparison.png"))
+```
+
+```{r Calculations for Gender Differences, eval = FALSE}
+# Characterizing Gender after selecting for Adults
+nrow(nhanes_clean) # Total number of participants
+
+nrow(nhanes_adults) # Number of adult participants
+
+nrow(nhanes_clean) - nrow(nhanes_adults) #Number of participants dropped with age selection
+
+# Change in Gender Distribution
+  # Males
+male_count_clean <- nhanes_clean %>% 
+     filter(gender == "Male") %>%
+     nrow()
+male_count_clean
+
+male_count_adults <- nhanes_adults %>% 
+     filter(gender == "Male") %>%
+     nrow()
+male_count_adults
+
+      #Difference
+male_count_clean - male_count_adults
+
+  # Females
+female_count_clean <- nhanes_clean %>% 
+     filter(gender == "Male") %>%
+     nrow()
+female_count_clean
+
+female_count_adults <- nhanes_adults %>% 
+     filter(gender == "Male") %>%
+     nrow()
+female_count_adults
+
+      #Difference
+female_count_clean - female_count_adults
+
+```
+
+
+The second set of demographics, which identifies “Asian” as a specific demographic, is the superior set of a data to analyse. As can be seen on the lower bar graph, those who identify as “Asian” account for many older adults, whereas those who identify as other are significantly younger that other ethnicity groups. When the data was consolidated in "other", the data was not as descriptive of the true distribution of demographics. 
+
+```{r Calculations for Demographic Differences, eval = FALSE, echo = TRUE}
+# Characterizing Gender after selecting for Adults
+total_n_cleans <- nrow(nhanes_clean) # Total number of participants
+
+# Number of Participants Identifying as Asian
+asian_count_eth_2 <- nhanes_clean %>% 
+     filter(ethnicity_2 == "Asian") %>%
+     nrow()
+asian_count_eth_2
+
+# Percentage of Participants Identifying as Asian
+(asian_count_eth_2/total_n_cleans * 100)
+
+```
+
+As seen by the previous calculation, 11.2 % of participants identify as Asian when prompted. This important value supports the point that inclusion of the option to self-identify as Asian, allows for a more accurate representation of the studied population's demographics. 
+
+
+# Exercise #3 - Improving ggplot figure
+
+The issues with this graph I noted include: 
+* The plot is cluttered with several lines, making it difficult to approach at first glance. 
+* The number of different participant plots makes it difficult on the eyes to trace the individual’s trajectory without putting your finger on the screen. 
+* The number of individuals has exhausted the color palette for discrete differentiation, thus a subtle change in blue means the several participants cannot be differentiated. Even if individual symbols were added to each participant, this would add to the problem of crowding. 
+* There is no title to the plot, no units for the weight axis (kg vs. lbs), and the x-axis is a variable of time measured in weeks. The legend has no title either. 
+* The baseline of each individual cannot be represented in a useful way, on a single consolidated chart.
+* The general trend of weight progress for the cohort is not represented, which is a useful piece of information to have. 
+
+The improvements made the the chart are listed in the following set of code, in a step-wise fashion. 
+
+```{r, eval = FALSE, echo = TRUE}
+knitr::opts_chunk$set(echo = FALSE,
+                      message = FALSE,
+                      warning = FALSE)
+## Diet Data Analysis ##
+
+# Create a new variable; weight_change #
+diet_data_wc <- diet_raw %>%        # Create a new data set with delta-weight
+  group_by(Participant) %>%
+  mutate(
+    baseline_weight = Weight[Week == 0], # The capital W was a key issue with troubleshooting
+    weight_change = Weight - baseline_weight
+  ) %>%
+  ungroup()
+
+# Determine the overall trend of weight change #
+
+      # We need to make sure we use the weight change, not the original raw 
+      # trends, so the curve doesn't start too high or too low from the individual curve
+
+mean_weight_change <- diet_data_wc %>%
+  group_by(Week) %>%
+  summarise(mean_change = mean(weight_change))
+
+# Create a plot with the participant data, relative to change in weight
+ diet_weight_change_hs <- ggplot(
+   diet_data_wc, aes(x = Week, y = weight_change, group = Participant)) +
+   geom_line(aes(color = "Individual"), alpha = 0.7) + # Participant lines
+   geom_line(data = mean_weight_change,
+            aes(x = Week, y = mean_change, color = "Population mean"),
+            linewidth = 1.1) + # Mean line
+   geom_line(data = mean_weight_change,
+            aes(x = Week, y = mean_change, color = "Population mean"),
+            linewidth = 1.2) +
+   facet_wrap(~ Participant) +
+   scale_color_manual(values = c("Individual" = "black", "Population mean" = "red")) +
+   labs(
+    title = "Change in Weight for Diet Participants",
+    x = "Time (weeks)",
+    y = "Change from Baseline (kg)",
+    color = "") +
+   theme_minimal() +
+   theme(plot.title = element_text(hjust = 0.5)) # Center the title
+
+# Split the consolidated data into 20 separate mini charts, so participants
+ # can be evaluated as individuals, relative to the overall trend (RED)
+ #and their initial weight.
+ 
+ggplot(diet_data_wc, aes(x = Week, y = weight_change,)) +
+  geom_line(linewidth = 2) +
+  geom_line(data = mean_weight_change, aes(y = mean_change, group = 1), 
+            color = "red", linewidth = 0.5) + # Mean line
+  facet_wrap(~ Participant) + 
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5)) + # Center the title
+  labs(
+  title = expression(underline ("Change in Weight for Individual Dieting Participants")),
+  x = "Time (weeks)",
+  y = "Change from Baseline (kg)")
+
+ggsave( #Saving the generated plot
+  "diet_individual_trends.png",
+  path = here("week_3_files", "figure images"),
+  width = 8, height = 6)
+
+# Given the nature of the data, I actively did not change the freedom of the axes.
+```
+
+```{r}
+knitr::include_graphics(here("week_3_files", "figure images", "diet_individual_trends.png"))
+```
+
+# Exercise #4 - Exploring relationships through visualizations
+
+Appraisal of NHANES Adult Participant Blood Pressure Data from 2013-2018
+
+## Introduction 
+The National Health and Nutrition Examination Survey is a CDC managed project that
+collects data from participants across several demographics. This report addresses
+gaps in information collection, and the general trends in blood
+pressure as functions of age and gender, for adult patients. The term
+adult is attributed to participants within the ages of 20 and 80 years old; those below the age
+of 20 are considered pediatric, and those above 80 geriatric.
+
+## Age distribution of participants accross ethnicities
+
+The NHANES study had two stratification for ethnicity; one that included diversity 
+in the title of "Asian", while another placing these participants in the "other" category.
+Given the importance in genetic differences between the diverse nations of Asian, the more
+descriptive data set was used for this report. When reviewing the data for incomplete entries,
+interestingly the average age of participants shifted upward, as seen in the figure below. 
+This prompts one to question why participants of a younger age, may not be completing their questionnaires
+and evaluations, and proposes to review the method of the study to increase younger participation.
+
+```{r}
+knitr::include_graphics(here("week_3_files", "figure images", "nhanes_age_ethnicity_cleaned.png"))
+```
+
+## Blood Pressure Categorizations across Age brackets and Gender
+
+This data review notes the differences in prevalence of different stages in hypertension,
+of non-specified cause, among adult participants in the NHANES. The first half of the chart
+below notes a significantly large population of normotensive women when compared to men across 
+all age groups, with more Elevated and Stage 1 Hypertensive men than women. The prevalence of Stage 2 HTN participants appears to be approximately the same for both genders. 
+
+The following chart notes an expected trend of worsening blood pressure, as correlated with age. 
+Once again, we see a reduced overall participant population in the youth, as mentioned in the previous section, but a relative trend of increasing blood pressure correlated with age. Participants over the age of 60, have slightless less Elevated and Stage 1 HTN individuals as compared to normotensive ones, with the majority suffering from Stage 2 HTN. 
+
+
+```{r}
+knitr::include_graphics(here("week_3_files", "figure images", "nhanes_bp_category_gender.png"))
+```
+
+```{r}
+knitr::include_graphics(here("week_3_files", "figure images", "combo_BP_gender_age.png"))
+```
+
+## Conclusions and Recommendations
+
+Overall,  removing participants with incompleted entries for gender, age and average SBP resulted in an increase in the overall age of the sample size. Across all ethnicities, we note the minimum age rising to above 30 years old, whereas before, every ethnicity category had entries below 20 years old. There is also a narrowing of the age gap between ethnicity groups, after this filtering of the data. One issue which you can see in the second plot, regarding blood pressure, is that there are still participants labelled as “NA”, despite my manipulation of the data. I’m not sure where I went wrong, and look forward to feedback from the grader to prevent this issue in the future.
+
+Based on these findings, it would behoove the NHANES team to identify individuals with incomplete NHANES data
+sets, and release surveys with following assessment to identify possible barriers to participation, issues with the 
+assessment itself and possible solutions to increase participation for a more accurate data set in following years. 
+
+## Appendix A - Raw code from R-Studio for Exercise 4
+
+```{r Exercise 4 - R-Code, eval = FALSE, echo = TRUE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE)
+### Exercise 4 - Story telling regarding Blood Pressure Readings ###
+
+## Step 1: Generate a column with mean systolic blood pressure ##
+nhanes_bp_mean <- nhanes_adults %>%
+  rowwise() %>%
+  mutate(
+    mean_sbp = mean(c_across(c(systolic_bp_1, systolic_bp_2, systolic_bp_3, systolic_bp_4)), na.rm = TRUE))
+
+print(nhanes_bp_mean) # Verify that it worked
+
+## Step 2: Remove incomplete data entries ##
+
+# Using Filter, I kept having no data points left in my data.set. So I tried a different function. 
+nhanes_bp_mean_clean_bad <- nhanes_bp_mean %>%
+  filter(!is.na(age) & !is.na(gender) & !is.na(mean_sbp))
+
+# Using the drop_na() I was able to get the goal functioning.
+nhanes_bp_mean_clean <- nhanes_bp_mean %>%
+  drop_na(c(age, gender, mean_sbp))
+          
+## Step 3: Creating categorical labels for systolic blood pressure ##
+
+nhanes_bp_categories <- nhanes_bp_mean_clean %>%
+  mutate(
+    blood_pressure_category = case_when(
+      mean_sbp < 120 ~ "Normal",
+      mean_sbp >= 120 & mean_sbp < 129 ~ "Elevated",
+      mean_sbp >= 130 & mean_sbp <= 139 ~ "Stage 1 Hypertension",
+      mean_sbp > 140 ~ "Stage 2 Hypertension",
+      TRUE ~ NA_character_))
+
+# Given the size of the data set, I confirmed implementation through the environment pane.
+
+##Step 4: Consolidating Data and Presenting
+
+# Comparing the impact of ethnicity and distribution after removing incomplete entries
+
+nhanes_p_4_cleaned <- ggplot(nhanes_bp_categories, aes(x = ethnicity_2, y = age, fill = gender)) + 
+  geom_boxplot() + 
+  labs( 
+    title = "Distribution of Participant Age as a Function of Ethnicity (+Asian) - Completed Entries", 
+    x = "Reported Ethnicity",
+    y = "Age (years)",
+    fill = "Gender") +
+  theme(plot.title = element_text(hjust = 0.5)) 
+
+# Blood pressure categories correlated with age categories
+
+bp_color_scheme <- c("Normal" = "blue", # Establishing the colors to be used for plots moving forward.
+                     "Elevated" = "purple", 
+                     "Stage 1 Hypertension" = "orange", 
+                     "Stage 2 Hypertension" = "red"
+)
+
+nhanes_p_5_gender_bp <- ggplot(
+  nhanes_bp_categories, aes(x = gender, 
+                            fill = fct_relevel(
+                              blood_pressure_category, 
+                              c("Normal","Elevated", 
+                                "Stage 1 Hypertension", 
+                                "Stage 2 Hypertension", 
+                                "NA")))) + 
+  geom_bar(position = "fill") + #Provides the relative ratio scale
+  scale_fill_manual(values = bp_color_scheme) +
+  labs( #Re-label axes
+    title = "Relative  Blood Pressure Characterization between Genders in Adult NHANES Participants", 
+    x = "Gender",
+    y = "Relative Distribution",
+    fill = "Blood Pressure Category") +
+  theme(plot.title = element_text(hjust = 0.5)) #Centers the chart title
+
+# Blood Pressure Categories correlated with Age
+nhanes_p_6_age_bp <- ggplot(nhanes_bp_categories, aes(x = age_cat, fill = blood_pressure_category)) + 
+  geom_bar(position = "dodge") + #Provides the relative ratio scale
+  labs( #Re-label axes
+    title = "Blood Pressure Characterization Among Age Groups in Adult NHANES Participants", 
+    x = "Age (years)",
+    y = "Individuals",
+    fill = "Blood Pressure Category") +
+  theme(plot.title = element_text(hjust = 0.5)) #Centers the chart title
+
+nhanes_p_6_age_bp # Testing
+
+# Combine the plots into a single figure
+ggarrange(
+  nhanes_p_4, # Age distribution vs. Ethnicity (A+) before removing incomplete entries
+  nhanes_p_4_cleaned, # Age distribution vs. Ethnicity (A+) after removing incomplete entries
+  nhanes_p_5_gender_bp, # BP Characterizations in Men vs. Women
+  nhanes_p_6_age_bp, # Bp Characterizations across age brackets
+  nrow = 4, ncol = 1, #Specifies the arrangement
+  common.legend = TRUE, legend = "top") #consolidates, and relocates the legend
+
+          # I did not like this; not only was I comparing a pre/post data manipulation between two Plots,
+          # but the visuals were not nice either. So I opted to split them into two arrangements.
+
+ggarrange(
+  nhanes_p_4, # Age distribution vs. Ethnicity (A+) before removing incomplete entries
+  nhanes_p_4_cleaned, # Age distribution vs. Ethnicity (A+) after removing incomplete entries
+  nrow = 2, ncol = 1, #Specifies the arrangement
+  common.legend = TRUE, legend = "top") #consolidates, and relocates the legend
+  
+ggsave( #Saving the generated plot
+  "dist_age_ethnicity_cleaned.png",
+  path = here("week_3_files", "figure images"),
+  width = 8, height = 6)
+
+ggarrange(
+    nhanes_p_5_gender_bp, # BP Characterizations in Men vs. Women
+    nhanes_p_6_age_bp, # Bp Characterizations across age brackets
+    nrow = 2, ncol = 1, #Specifies the arrangement
+    common.legend = TRUE, legend = "top" #consolidates, and relocates the legend
+  )
+
+## Step 5 - BP Characterization in separate age groups
+
+bp_color_scheme <- c("Normal" = "blue", 
+                     "Elevated" = "purple", 
+                     "Stage 1 Hypertension" = "orange", 
+                     "Stage 2 Hypertension" = "red"
+                     )
+
+nhanes_bp_age_categories <- nhanes_bp_categories %>%
+ggplot(aes(x = gender, fill = fct_relevel(blood_pressure_category, 
+                                          c("Normal", 
+                                            "Elevated", 
+                                            "Stage 1 Hypertension", 
+                                            "Stage 2 Hypertension", 
+                                            "NA")))) +
+  geom_bar(position = "dodge") +
+  facet_wrap(~ age_cat) + 
+  scale_fill_manual(values = bp_color_scheme) +
+  theme_classic() +
+  theme(
+    plot.title = element_text(hjust = 0.5), # Center the title
+    legend.position = ("top"),              # Re-position Legend
+    panel.grid.major.x = element_blank(),   # Removes vertical lines (Less Clutter)
+    panel.grid.minor.x = element_blank(),
+    panel.grid.major.y = element_line(color = "lightgrey", linewidth = 0.2),
+    pane.grid.minor.y = element_line(color = "lightgrey", linewidth = 0.2)
+    ) + 
+  labs( # Clean up labels
+    title = expression(underline ("NHANES Blood Pressure Characteristics of Age Categories")),
+    x = "Gender",
+    y = "Number of Participants",
+    fill = "BP Category",
+    )
+
+ggsave( #Saving the generated plot
+  "combo_BP_gender_age.png",
+  path = here("week_3_files", "figure images"),
+  width = 8, height = 6)
+nhanes_bp_age_categories
+
+```
+
+
+
+
