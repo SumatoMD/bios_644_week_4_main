@@ -1,0 +1,179 @@
+---
+title: "NHANES Dashboard"
+author: "Dr. Harrison G. Saulnier"
+date: "2025-09-29"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    theme: journal
+    highlight: haddock
+    code_folding: hide
+---
+
+
+```{r setup, include = FALSE}
+```
+
+Row {data-height=650}
+-------------------------------------
+```{r toolbox, eval = TRUE, echo= FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      message = FALSE,
+                      warning = FALSE,
+                      fig.align = 'center',  # Formatting for all Figures
+                      out.width = "90%")
+
+### Package Loading ###
+library(pacman)
+p_load(here)
+p_load(readr)
+p_load(rio)
+p_load(skimr)
+p_load(janitor)
+p_load(tidyverse)
+p_load(dplyr)
+p_load(rmarkdown)
+p_load(tinytex)
+p_load(ggplot2)
+p_load(cowplot)
+p_load(ggpubr)
+p_load(RColorBrewer)
+p_load(forcats)
+p_load(dtplyr)
+p_load(DT)
+p_load(flexdashboard)
+
+## NHANES Data - Cleaned by Instructor ##
+nhanes_clean <- import(here("week_3_files", "data", "cleaned_NHANES.csv"))
+
+nhanes_adults <- nhanes_clean %>% 
+  filter(age >= 20 & age <= 80)
+
+nhanes_bp_mean <- nhanes_adults %>%
+  rowwise() %>%
+  mutate(
+    mean_sbp = mean(c_across(c(systolic_bp_1, systolic_bp_2, systolic_bp_3, systolic_bp_4)), na.rm = TRUE))
+
+```
+
+### 
+
+```{r}
+knitr::include_graphics(here("week_3_files", "figure images", "combo_BP_gender_age.png"))
+# See the unloaded Code for explanation as to why I did not change the colors from the gawdy
+# ones to a transitional one. 
+```
+
+Row {data-height=150}
+-------------------------------------
+
+```{r, eval = FALSE, echo= FALSE}
+
+# This code attempted to regenerate the attached graph with a blue-red gradient. However 
+# Troubleshooting left to charts with gray column (because NA was still present despite 
+# both suggested means of removing the NA from the data). So i opted to use my orinigal gaudy coloring
+
+## Step 1: Generate a column with mean systolic blood pressure ##
+nhanes_bp_mean <- nhanes_adults %>%
+  rowwise() %>%
+  mutate(
+    mean_sbp = mean(c_across(c(systolic_bp_1, systolic_bp_2, systolic_bp_3, systolic_bp_4)), na.rm = TRUE))
+
+print(nhanes_bp_mean) # Verify that it worked
+
+## Step 2: Remove incomplete data entries ##
+
+nhanes_bp_mean_clean <- nhanes_bp_mean %>%
+  filter(!is.na(age) & !is.na(gender) & !is.na(mean_sbp))
+          
+## Step 3: Creating categorical labels for systolic blood pressure ##
+
+nhanes_bp_categories <- nhanes_bp_mean_clean %>%
+  mutate(
+    blood_pressure_category = case_when(
+      mean_sbp < 120 ~ "Normal",
+      mean_sbp >= 120 & mean_sbp < 129 ~ "Elevated",
+      mean_sbp >= 130 & mean_sbp <= 139 ~ "Stage 1 Hypertension",
+      mean_sbp > 140 ~ "Stage 2 Hypertension",
+      TRUE ~ NA_character_))
+
+nhanes_bp_categories_ordered <- nhanes_bp_categories %>%
+  mutate(
+    blood_pressure_category = factor(
+      blood_pressure_category,
+      levels = c("Normal", "Elevated", "Hypertension Stage 1",
+                 "Hypertension Stage 2", "Hypertensive Crisis"),
+      ordered = TRUE))
+
+# Create a new numeric variable to represent the category level.
+nhanes_bp_categories_ordered_color <- nhanes_bp_categories %>%
+  mutate(
+    bp_numeric = as.numeric(blood_pressure_category)
+  )
+
+nhanes_p_6_age_bp <- ggplot(nhanes_bp_categories_ordered_color, 
+       aes(x = age_cat, fill = bp_numeric)) + 
+  geom_bar(position = "dodge") + 
+  scale_fill_gradient(
+    low = "blue", 
+    high = "red",
+    name = "Blood Pressure Category",
+    breaks = as.numeric(unique(nhanes_bp_categories$blood_pressure_category)),
+    labels = levels(nhanes_bp_categories$blood_pressure_category)
+  ) +
+  labs(
+    title = "Blood Pressure Characterization Among Age Groups in Adult NHANES Participants", 
+    x = "Age (years)",
+    y = "Individuals") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+nhanes_p_6_age_bp
+
+
+```
+
+
+### Adult Participants in NHANES Study from 2013-2018
+```{r, eval = TRUE, echo= FALSE}
+
+nhanes_clean_21_above <- nhanes_clean %>%
+  summarise(
+    percentage = mean(age >= 21) * 100
+  ) %>%
+  pull(percentage)
+
+gauge(
+  value = nhanes_clean_21_above,
+  min = 0,
+  max = 100,
+  symbol = '%',
+  label = "21 years old and older"
+  )
+
+# I was not very happy with the size of this graphic, but could not find a means to have its size increased
+# Just the area it occupied. There was no "size to fit" option, like a "print to fit". 
+```
+
+### of Participants with Abnormally High Systolic Blood Pressure
+```{r, eval = TRUE, echo= FALSE}
+
+nhanes_bp_mean_high_count <- nhanes_bp_mean %>% # Remove NA from this population
+   filter(mean_sbp > 120) %>%
+  nrow() # Determine how many participants have an abnormal BP
+
+
+nhanes_total_participants <- nrow(nhanes_bp_mean) # Find the total # of participants
+
+nhanes_bp_mean_high_percent <- round((nhanes_bp_mean_high_count / nhanes_total_participants) * 100, 1)
+
+valueBox(
+  value = paste0(nhanes_bp_mean_high_percent, "%"),
+  caption = "Percentage of Participants with Abnormally High Systolic BP",
+  icon = "fa-heart-circle-exclamation", # I googled the icons and found this was kind of ideal
+  color = "danger"
+)
+
+# The sizing of this one made a lot more sense so I figured I would cut my losses. 
+```
+
+---
