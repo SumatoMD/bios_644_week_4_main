@@ -1,0 +1,368 @@
+---
+title: "BIOS640 Week 4 - Exercise #4"
+author: "Harrison Saulnier"
+date: "2025-09-29"
+output: 
+  pdf_document:
+    latex_engine: pdflatex
+    keep_tex: true
+    toc: false
+    number_sections: false
+    fig_caption: true
+    highlight: tango
+    citation_package: natbib
+header-includes:
+  - \usepackage{booktabs}
+bibliography: nhanes_references.bib
+nocite: '@*'
+---
+rmarkdown::render("your_file.Rmd")
+```{r setup toolbox, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+
+### Package Loading ###
+library(pacman)
+p_load(here)
+p_load(readr)
+p_load(rio)
+p_load(skimr)
+p_load(janitor)
+p_load(tidyverse)
+p_load(dplyr)
+p_load(rmarkdown)
+p_load(tinytex)
+p_load(ggplot2)
+p_load(cowplot)
+p_load(ggpubr)
+p_load(RColorBrewer)
+p_load(forcats)
+p_load(dtplyr)
+p_load(booktabs)
+p_load(DT)
+p_load(flexdashboard)
+p_load(kable)
+p_load(kableExtra)
+p_load(flextable)
+p_load(gt)
+p_load(reactable)
+p_load(sos)
+#p_load(LaTeX)
+
+## NHANES Data - Cleaned by Instructor ##
+nhanes_clean <- import(here("week_3_files", "data", "cleaned_NHANES.csv"))
+
+nhanes_adults <- nhanes_clean %>% 
+  filter(age >= 20 & age <= 80)
+
+nhanes_bp_mean <- nhanes_adults %>%
+  rowwise() %>%
+  mutate(
+    mean_sbp = mean(c_across(c(systolic_bp_1, systolic_bp_2, systolic_bp_3, systolic_bp_4)), na.rm = TRUE))
+
+```
+
+# The State of the Nephron: Systolic Blood Pressure trends from the NHANES (2013 - 2018)
+
+## Introduction
+
+The National Health Assessment and Nutrition Survey (NHANES) is an american program designed to identify the current
+trends in nutrition and health within the american population, including both pediatric and adult populations. The study is carried out by the Center for Disease Control (CDC) with the hope of identifying trends in deficiencies, to eventually prevent the development of disease. This report identifies trends in systolic blood pressure within this studied population, to highlight the prevalence of varying degrees of hypertension across ethnic groups, categories of age and gender. The data reviewed for this study spans 2013 to 2018 inclusively.
+
+## Demographics Across Sample Years 
+
+
+```{r not used, eval = FALSE, echo= FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      message = FALSE,
+                      warning = FALSE,
+                      fig.align = 'center',  # Formatting for all Figures
+                      out.width = "90%")
+
+# First attempt using what I learnt from the course modules #
+# I didn't get the chart I had in my imagination, so I looked for self-help resources online (See Next Chunk)
+
+### Step 1 - Create a Table with Ethnicity by Gender with Totals 
+# Absolute Values
+table_eth_gender_values <- xtabs( 
+~ ethnicity_2 + gender,
+data = nhanes_clean
+)
+
+# Percentages
+table_eth_gender_percentages <- round(prop.table(table_eth_gender_values, margin = 1) * 100, 2)
+
+# Format the Male and Female columns with counts and percentages
+counts_Male <- table_eth_gender_values[, "Male"]
+percents_Male <- round(table_eth_gender_percentages[, "Male"], 1)
+formatted_Male <- paste0(counts_Male, " (", percents_Male, "%)")
+
+counts_Female <- table_eth_gender_values[, "Female"]
+percents_Female <- round(table_eth_gender_percentages[, "Female"], 1)
+formatted_Female <- paste0(counts_Female, " (", percents_Female, "%)")
+
+# Calculate the Total column
+total_counts_column <- rowSums(table_eth_gender_values)
+total_percentages <- rep(100, nrow(table_eth_gender_values))
+formatted_Total_column <- paste0(total_counts_column, " (", total_percentages, "%)")
+
+# Create the main data frame with the total column
+table_eth_gender_all_year <- data.frame(
+  n = total_counts_column, # This is the same as the total column, just keeping for clarity
+  Male = formatted_Male,
+  Female = formatted_Female,
+  Total = formatted_Total_column
+)
+
+# Create the total row data frame, ensuring it has all columns
+total_n <- sum(table_eth_gender_values)
+total_counts_Male <- sum(table_eth_gender_values[, "Male"])
+total_counts_Female <- sum(table_eth_gender_values[, "Female"])
+
+# Calculate the percentages for the total row
+total_percent_Male <- round((total_counts_Male / total_n) * 100, 1)
+total_percent_Female <- round((total_counts_Female / total_n) * 100, 1)
+
+# Format the cells for the total row
+formatted_Total_Male <- paste0(total_counts_Male, " (", total_percent_Male, "%)")
+formatted_Total_Female <- paste0(total_counts_Female, " (", total_percent_Female, "%)")
+formatted_Total_Grand <- paste0(total_n, " (100%)")
+
+# Build the total row data frame
+total_row_df <- data.frame(
+  n = total_n,
+  Male = formatted_Total_Male,
+  Female = formatted_Total_Female,
+  Total = formatted_Total_Grand,
+  row.names = "Total"
+)
+
+# Add the total row to the table
+table_eth_gender_with_totals <- rbind(table_eth_gender_all_year, total_row_df)
+
+# Display the final table
+table_eth_gender_with_totals
+
+
+```
+
+```{r demographics table, eval = TRUE, echo = FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      message = FALSE,
+                      warning = FALSE,
+                      fig.align = 'center',  # Formatting for all Figures
+                      out.width = "90%")
+
+# As you can see above in the un-run code. I was able to generate a 3-variable table after a lot of troubleshooting
+# and research online. I found a more complex way to get the job done, and managed to optimize it for the image
+# that I originally wanted, so used it for the final product. 
+
+
+# Step 1 : Define a function to calculate table metrics for each wave
+
+generate_table_for_wave <- function(data_subset, total_dataset) { 
+  table_eth_gender_values <- xtabs( # Absolute counts for the wave
+    ~ ethnicity_2 + gender,
+    data = data_subset
+  )
+
+  # Absolute counts for the total data set
+  total_counts <- xtabs(
+    ~ ethnicity_2 + gender,
+    data = total_dataset
+  )
+  
+  # Calculate percentages based on the total counts from the original dataset
+  total_n <- sum(total_counts)
+  table_eth_gender_percentages <- round((table_eth_gender_values / total_n) * 100, 2)
+  
+  # Format the Male and Female columns with counts and percentages
+  counts_Male <- table_eth_gender_values[, "Male"]
+  percents_Male <- ifelse(is.nan(table_eth_gender_percentages[, "Male"]), 0, table_eth_gender_percentages[, "Male"])
+  formatted_Male <- paste0(counts_Male, " (", percents_Male, "%)")
+
+  counts_Female <- table_eth_gender_values[, "Female"]
+  percents_Female <- ifelse(is.nan(table_eth_gender_percentages[, "Female"]), 0, table_eth_gender_percentages[, "Female"])
+  formatted_Female <- paste0(counts_Female, " (", percents_Female, "%)")
+  
+  # Calculate the Total column based on the overall dataset total
+  total_counts_column <- rowSums(table_eth_gender_values)
+  total_percentages_column <- ifelse(
+    is.nan(total_counts_column / total_n), 0, round((total_counts_column / total_n) * 100, 2))  
+  formatted_Total_column <- paste0(total_counts_column, " (", total_percentages_column, "%)")
+
+  # Create the main data frame with the total column
+  table_eth_gender_all_wave <- data.frame(
+    Male = formatted_Male,
+    Female = formatted_Female,
+    Total = formatted_Total_column
+  )
+  
+  # Create the total row data frame
+  total_counts_Male <- sum(table_eth_gender_values[, "Male"])
+  total_counts_Female <- sum(table_eth_gender_values[, "Female"])
+  total_percent_Male <- ifelse(
+    is.nan(total_counts_Male / total_n), 0, round((total_counts_Male / total_n) * 100, 2))
+  total_percent_Female <- ifelse(
+    is.nan(total_counts_Female / total_n), 0, round((total_counts_Female / total_n) * 100, 2))
+
+  total_grand_count <- sum(total_counts_column)
+  total_grand_percent <- ifelse(
+    is.nan(total_grand_count / total_n), 0, round((total_grand_count / total_n) * 100, 2))
+
+  formatted_Total_Male <- paste0(total_counts_Male, " (", total_percent_Male, "%)")
+  formatted_Total_Female <- paste0(total_counts_Female, " (", total_percent_Female, "%)")
+  formatted_Total_Grand <- paste0(total_grand_count, " (", total_grand_percent, "%)")
+
+
+  total_row <- data.frame(
+    Male = formatted_Total_Male,
+    Female = formatted_Total_Female,
+    Total = formatted_Total_Grand,
+    row.names = "Total"
+  )
+
+  # Add the total row to the table and return
+  final_table <- rbind(table_eth_gender_all_wave, total_row)
+  
+  # Add ethnicity as a column
+  final_table$Ethnicity <- rownames(final_table)
+  return(final_table)
+}
+
+# Convert ethnicity_2 to a factor with descriptive labels
+nhanes_clean$ethnicity_2 <- factor(nhanes_clean$ethnicity_2,
+  levels = c(1, 2, 3, 4, 5),
+  labels = c("Mexican American", "Other Hispanic", "Non-Hispanic White", "Non-Hispanic Black", "Other Race")
+)
+
+# Step 4: Apply the table generation function to each wave
+split_by_wave <- split(nhanes_clean, nhanes_clean$wave_id)
+wave_tables_list <- lapply(split_by_wave, generate_table_for_wave, total_dataset = nhanes_clean)
+
+# Step 5: Combine the list of tables into a single data frame with the wave_id column
+final_table_combined <- bind_rows(wave_tables_list, .id = "wave_id")
+
+
+# Step 6: Final Formatting and Reshaping
+nhanes_demographics_final <- final_table_combined %>%
+  pivot_wider(
+    names_from = wave_id,
+    values_from = c(Male, Female, Total),
+    names_glue = "{.value}_{wave_id}"
+  ) %>%
+  # Reorder columns so each wave is grouped: Male → Female → Total
+  select(Ethnicity,
+       starts_with("Male_2013"), starts_with("Female_2013"), starts_with("Total_2013"),
+       starts_with("Male_2015"), starts_with("Female_2015"), starts_with("Total_2015"),
+       starts_with("Male_2017"), starts_with("Female_2017"), starts_with("Total_2017"))
+
+# Step 6a: Suggestion from Co-Pilot for troubleshooting
+sanitize_latex <- function(x) {
+  x <- gsub("%", "\\\\%", x)
+  x <- gsub("&", "\\\\&", x)
+  x <- gsub("_", "\\\\_", x)
+  x <- gsub("#", "\\\\#", x)
+  x <- gsub("\\$", "\\\\$", x)
+  return(x)
+}
+
+nhanes_demographics_final <- lapply(nhanes_demographics_final, sanitize_latex)
+
+str(nhanes_demographics_final)
+unique(nhanes_clean$wave_id)
+names(nhanes_demographics_final)
+# Step 7: Format the table with kable
+nhanes_demographics_formatted <- nhanes_demographics_final %>%
+  kable(
+    format = "latex",
+    booktabs = TRUE,
+    caption = "NHANES Demographics by Sampling Year and Gender",
+    align = "lccccccccc",
+    escape = FALSE  # <-- Add this line
+  ) %>%
+  add_header_above(c(
+    " " = 1, 
+    "2013-2014" = 3, 
+    "2015-2016" = 3, 
+    "2017-2018" = 3)) %>%
+  kable_styling(
+    latex_options = c("hold_position", "scale_down"),
+    full_width = FALSE
+  )
+
+
+# Display the formatted table explicitly
+nhanes_demographics_formatted
+
+# There has to be an easier way, because I spent like 3h doing this on Monday afternoon. 
+```
+This data demonstrates hi
+
+## Ethnicity and Blood Pressure
+
+A common demographic in all fields of medicine is ethnicity, and how it relates to the pathologies faced within one's sub specialty. This is no different to identifying risk factors within ethnic groups for underlying pathologies. The data below highlights that mean systolic blood pressures are consistent in the elevated range across all ethnic groups. This trend has increased across all groups, with the exception of those identifying as Mexican remaining relatively stable. Interestingly, we see an increase in standard deviation across all groups, suggesting a shift from a homogeneity. One aspect that should be evaluated as a control for this data set, is the current household income given that socioeconomic standing in the United States correlates strongly with ethnic background, and health outcomes. In a future report I would like to review this connection. 
+
+```{r bp summary table, eval = TRUE}
+knitr::opts_chunk$set(echo = FALSE,
+                      message = FALSE,
+                      warning = FALSE,
+                      fig.align = 'center',  # Formatting for all Figures
+                      out.width = "100%")
+
+# Step 1 - Summarize the data by both ethnicity_2 and wave_id
+nhanes_bp_mean_long <- nhanes_bp_mean %>%
+  group_by(ethnicity_2, wave_id) %>%
+  summarise(
+    Min = min(mean_sbp, na.rm = TRUE),
+    Max = max(mean_sbp, na.rm = TRUE),
+    Median = median(mean_sbp, na.rm = TRUE),
+    Mean = mean(mean_sbp, na.rm = TRUE),
+    SD = sd(mean_sbp, na.rm = TRUE),
+    .groups = 'drop'
+  )
+
+# Step 2 - Reshape the table using pivot_wider to create wave-specific columns
+nhanes_bp_mean_wide <- nhanes_bp_mean_long %>%
+  pivot_wider(
+    names_from = wave_id,
+    values_from = c(Min, Max, Median, Mean, SD)
+  ) %>%
+  # Reorder columns for readability, starting with ethnicity_2
+  select(ethnicity_2,
+         starts_with("Min_"), 
+         starts_with("Max_"), 
+         starts_with("Median_"),
+         starts_with("Mean_"), 
+         starts_with("SD_"))
+
+# Step 3 - Create the table with multi-level headers and limit decimal places
+nhanes_bp_mean_final <- nhanes_bp_mean_wide %>%
+  knitr::kable(
+    format = "latex",
+    booktabs = TRUE,
+    caption = "Summary Statistics for SBP by Ethnicity and Wave",
+    digits = 1, # Limit to 1 decimal place
+    col.names = c(
+      "Ethnicity",
+      "2013-2014", "2015-2016", "2017-2018",
+      "2013-2014", "2015-2016", "2017-2018",
+      "2013-2016", "2017-2018", "2015-2016", # Corrected column names
+      "2013-2014", "2015-2016", "2017-2018",
+      "2013-2014", "2015-2016", "2017-2018")
+  ) %>%
+  add_header_above( # Apply a top header to group the columns
+    c(" " = 1, "Min" = 3, "Max" = 3, "Median" = 3, "Mean" = 3, "SD" = 3)
+  ) %>%
+  kable_styling(
+    latex_options = c("hold_position", "scale_down"), # Initial rendering was too large
+    full_width = FALSE)
+
+nhanes_bp_mean_final
+```
+
+
+# References
+
+
+
+
