@@ -2,15 +2,7 @@
 title: "BIOS640 Week 4 - Exercise #4"
 author: "Harrison Saulnier"
 date: "2025-09-29"
-output: 
-  pdf_document:
-    latex_engine: pdflatex
-    keep_tex: true
-    toc: false
-    number_sections: false
-    fig_caption: true
-    highlight: tango
-    citation_package: natbib
+output: pdf_document
 header-includes:
   - \usepackage{booktabs}
 bibliography: nhanes_references.bib
@@ -46,7 +38,7 @@ p_load(flextable)
 p_load(gt)
 p_load(reactable)
 p_load(sos)
-#p_load(LaTeX)
+p_load(LaTeX)
 
 ## NHANES Data - Cleaned by Instructor ##
 nhanes_clean <- import(here("week_3_files", "data", "cleaned_NHANES.csv"))
@@ -61,12 +53,12 @@ nhanes_bp_mean <- nhanes_adults %>%
 
 ```
 
-# The State of the Nephron: Systolic Blood Pressure trends from the NHANES (2013 - 2018)
+# The State of the Nephron: Systolic Blood Pressure trends from the NHANES (2015 - 2018)
 
 ## Introduction
 
 The National Health Assessment and Nutrition Survey (NHANES) is an american program designed to identify the current
-trends in nutrition and health within the american population, including both pediatric and adult populations. The study is carried out by the Center for Disease Control (CDC) with the hope of identifying trends in deficiencies, to eventually prevent the development of disease. This report identifies trends in systolic blood pressure within this studied population, to highlight the prevalence of varying degrees of hypertension across ethnic groups, categories of age and gender. The data reviewed for this study spans 2013 to 2018 inclusively.
+trends in nutrition and health within the american population, including both pediatric and adult populations. The study is carried out by the Center for Disease Control (CDC) with the hope of identifying trends in deficiencies, to eventually prevent the development of disease. This report identifies trends in systolic blood pressure within this studied population, to highlight the prevalence of varying degrees of hypertension across ethnic groups, categories of age and gender. The data reviewed for this study spans 2015 to 2018 inclusively.
 
 ## Demographics Across Sample Years 
 
@@ -145,7 +137,7 @@ table_eth_gender_with_totals
 
 ```
 
-```{r demographics table, eval = TRUE, echo = FALSE}
+```{r demographics table, eval = FALSE, echo = FALSE}
 knitr::opts_chunk$set(echo = FALSE,
                       message = FALSE,
                       warning = FALSE,
@@ -158,7 +150,11 @@ knitr::opts_chunk$set(echo = FALSE,
 
 
 # Step 1 : Define a function to calculate table metrics for each wave
+safe_percent <- function(x) {
+  ifelse(is.nan(x), 0, round(x, 2))
+}
 
+unique(nhanes_clean$wave_id)
 generate_table_for_wave <- function(data_subset, total_dataset) { 
   table_eth_gender_values <- xtabs( # Absolute counts for the wave
     ~ ethnicity_2 + gender,
@@ -177,17 +173,16 @@ generate_table_for_wave <- function(data_subset, total_dataset) {
   
   # Format the Male and Female columns with counts and percentages
   counts_Male <- table_eth_gender_values[, "Male"]
-  percents_Male <- ifelse(is.nan(table_eth_gender_percentages[, "Male"]), 0, table_eth_gender_percentages[, "Male"])
+  percents_Male <- safe_percent(table_eth_gender_percentages[, "Male"])
   formatted_Male <- paste0(counts_Male, " (", percents_Male, "%)")
 
   counts_Female <- table_eth_gender_values[, "Female"]
-  percents_Female <- ifelse(is.nan(table_eth_gender_percentages[, "Female"]), 0, table_eth_gender_percentages[, "Female"])
+  percents_Female <- safe_percent(table_eth_gender_percentages[, "Female"])
   formatted_Female <- paste0(counts_Female, " (", percents_Female, "%)")
   
   # Calculate the Total column based on the overall dataset total
   total_counts_column <- rowSums(table_eth_gender_values)
-  total_percentages_column <- ifelse(
-    is.nan(total_counts_column / total_n), 0, round((total_counts_column / total_n) * 100, 2))  
+  total_percentages_column <- safe_percent(total_counts_column / total_n)
   formatted_Total_column <- paste0(total_counts_column, " (", total_percentages_column, "%)")
 
   # Create the main data frame with the total column
@@ -268,23 +263,20 @@ sanitize_latex <- function(x) {
 
 nhanes_demographics_final <- lapply(nhanes_demographics_final, sanitize_latex)
 
-str(nhanes_demographics_final)
-unique(nhanes_clean$wave_id)
-names(nhanes_demographics_final)
+
 # Step 7: Format the table with kable
 nhanes_demographics_formatted <- nhanes_demographics_final %>%
   kable(
     format = "latex",
     booktabs = TRUE,
     caption = "NHANES Demographics by Sampling Year and Gender",
-    align = "lccccccccc",
+    align = "lcccccc",
     escape = FALSE  # <-- Add this line
   ) %>%
   add_header_above(c(
     " " = 1, 
-    "2013-2014" = 3, 
-    "2015-2016" = 3, 
-    "2017-2018" = 3)) %>%
+    "2015–2016" = 3, 
+    "2017–2018" = 3)) %>%
   kable_styling(
     latex_options = c("hold_position", "scale_down"),
     full_width = FALSE
@@ -296,7 +288,7 @@ nhanes_demographics_formatted
 
 # There has to be an easier way, because I spent like 3h doing this on Monday afternoon. 
 ```
-This data demonstrates hi
+Unfortunately the data I wanted to present has bugged out and cannot be accessed. I was able to generate a table highlighting all of the data, as requested in the prompt, but an error with Latex resulted in me not being able to render a PDF. Due to time constraints, and almost 8 hours of my day, I was not able to troubleshoot it so I opted to not run this section of code for part marks. None the less, the data demonstrated that there was a even distribution of male:female participants, and that demographics were appropriately distributed through the years. This table highlighted the quality of the NHANES data-set, as it encompassed a diverse sample of the american population. 
 
 ## Ethnicity and Blood Pressure
 
